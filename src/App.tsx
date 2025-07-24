@@ -2,11 +2,12 @@ import { useMemo, useState } from "react"
 
 function App() {
   const [hasSubmitted, setHasSubmitted] = useState(false)
-  const [wage, setWage] = useState(0)
+  const [wageStr, setWageStr] = useState("0")
+  const wage = parseFloat(wageStr)
   const [wageFrequency, setWageFrequency] = useState("monthly")
 
-  const [hoursPerPeriod, setHoursPerPeriod] = useState(0)
-  const [periodsPerYear, setPeriodsPerYear] = useState(0)
+  const [hoursPerPeriod, setHoursPerPeriod] = useState(24)
+  const [periodsPerYear, setPeriodsPerYear] = useState(52)
 
   const [hasHolidayPay, setHasHolidayPay] = useState(false)
   const [holidayPercentage, setHolidayPercentage] = useState(0)
@@ -24,7 +25,7 @@ function App() {
       return yearlyToMinute(hourlyToYearly(wageWithHolidayPay, hoursPerPeriod, periodsPerYear))
     }
     throw new Error("Invalid wage frequency")
-  }, [wage, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
+  }, [wageStr, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -41,9 +42,9 @@ function App() {
               <label className="block">
                 <span className="text-gray-700 font-medium text-sm mb-2 block">Enter your wage:</span>
                 <input
-                  value={wage}
-                  onChange={e => setWage(parseInt(e.target.value))}
-                  type="number"
+                  value={wageStr}
+                  onChange={e => setWageStr(e.target.value)}
+                  type="text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                   placeholder="0"
                 />
@@ -105,7 +106,7 @@ function App() {
 
             <button
               disabled={
-                wage === 0 ||
+                isNaN(wage) ||
                 (wageFrequency === "hourly" && hoursPerPeriod === 0) ||
                 (wageFrequency === "hourly" && periodsPerYear === 0)
               }
