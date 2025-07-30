@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useIncomePercentile } from "./cbs-income-distribution"
 
 function App() {
   const [hasSubmitted, setHasSubmitted] = useState(false)
@@ -12,20 +13,23 @@ function App() {
   const [hasHolidayPay, setHasHolidayPay] = useState(false)
   const [holidayPercentage, setHolidayPercentage] = useState(0)
 
-  const wagePerMinute = useMemo(() => {
+  const yearlyWage = useMemo(() => {
     const wageWithHolidayPay = wage * (1 + (hasHolidayPay ? holidayPercentage / 100 : 0))
-
     if (wageFrequency === "yearly") {
-      return yearlyToMinute(wageWithHolidayPay)
+      return wageWithHolidayPay
     }
     if (wageFrequency === "monthly") {
-      return yearlyToMinute(monthyToYearly(wageWithHolidayPay))
+      return monthyToYearly(wageWithHolidayPay)
     }
     if (wageFrequency === "hourly") {
-      return yearlyToMinute(hourlyToYearly(wageWithHolidayPay, hoursPerPeriod, periodsPerYear))
+      return hourlyToYearly(wageWithHolidayPay, hoursPerPeriod, periodsPerYear)
     }
     throw new Error("Invalid wage frequency")
-  }, [wageStr, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
+  }, [wage, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
+
+  const wagePerMinute = yearlyToMinute(yearlyWage)
+
+  const incomePercentile = useIncomePercentile(yearlyWage)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -128,6 +132,11 @@ function App() {
                 }).format(wagePerMinute)}
               </p>
               <p className="text-blue-700 text-sm mt-1">per living minute</p>
+              {incomePercentile != null && (
+                <p className="text-sm text-gray-500">
+                  This puts you in the top {incomePercentile.toFixed(1)}% of dutch single-person households
+                </p>
+              )}
             </div>
             <button
               onClick={() => setHasSubmitted(false)}
