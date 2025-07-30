@@ -1,7 +1,12 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useIncomePercentile } from "./cbs-income-distribution"
+import { plausible } from "./plausible"
 
 function App() {
+  useEffect(() => {
+    plausible.enableAutoPageviews()
+  }, [])
+
   const [hasSubmitted, setHasSubmitted] = useState(false)
   const [wageStr, setWageStr] = useState("0")
   const wage = parseFloat(wageStr)
@@ -30,6 +35,21 @@ function App() {
   const wagePerMinute = yearlyToMinute(yearlyWage)
 
   const incomePercentile = useIncomePercentile(yearlyWage)
+
+  useEffect(() => {
+    if (hasSubmitted) {
+      plausible.trackEvent("calculate", {
+        props: {
+          yearlyWage,
+          wageFrequency,
+          hoursPerPeriod,
+          periodsPerYear,
+          hasHolidayPay,
+          holidayPercentage,
+        },
+      })
+    }
+  }, [yearlyWage, wageFrequency, hoursPerPeriod, periodsPerYear, hasHolidayPay, holidayPercentage, hasSubmitted])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
