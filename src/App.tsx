@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useIncomePercentile } from "./cbs-income-distribution"
 
 function App() {
