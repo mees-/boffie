@@ -1,7 +1,17 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom"
+import { useForm } from "react-hook-form"
 import { useIncomePercentile } from "./cbs-income-distribution"
 import { plausible } from "./plausible"
+
+interface WageFormData {
+  wage: number
+  wageFrequency: "yearly" | "monthly" | "hourly"
+  hoursPerPeriod: number
+  periodsPerYear: number
+  hasHolidayPay: boolean
+  holidayPercentage: number
+}
 
 function App() {
   useEffect(() => {
@@ -22,15 +32,25 @@ function App() {
 
 function WageForm() {
   const navigate = useNavigate()
-  const [wageStr, setWageStr] = useState("0")
-  const wage = parseFloat(wageStr)
-  const [wageFrequency, setWageFrequency] = useState("monthly")
 
-  const [hoursPerPeriod, setHoursPerPeriod] = useState(24)
-  const [periodsPerYear, setPeriodsPerYear] = useState(52)
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<WageFormData>({
+    defaultValues: {
+      wage: 0,
+      wageFrequency: "monthly",
+      hoursPerPeriod: 24,
+      periodsPerYear: 52,
+      hasHolidayPay: false,
+      holidayPercentage: 0,
+    },
+  })
 
-  const [hasHolidayPay, setHasHolidayPay] = useState(false)
-  const [holidayPercentage, setHolidayPercentage] = useState(0)
+  const watchedValues = watch()
+  const { wage, wageFrequency, hoursPerPeriod, periodsPerYear, hasHolidayPay, holidayPercentage } = watchedValues
 
   const yearlyWage = useMemo(() => {
     const wageWithHolidayPay = wage * (1 + (hasHolidayPay ? holidayPercentage / 100 : 0))
@@ -46,17 +66,15 @@ function WageForm() {
     throw new Error("Invalid wage frequency")
   }, [wage, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const onSubmit = (data: WageFormData) => {
     plausible.trackEvent("calculate", {
       props: {
         yearlyWage,
-        wageFrequency,
-        hoursPerPeriod,
-        periodsPerYear,
-        hasHolidayPay,
-        holidayPercentage,
+        wageFrequency: data.wageFrequency,
+        hoursPerPeriod: data.hoursPerPeriod,
+        periodsPerYear: data.periodsPerYear,
+        hasHolidayPay: data.hasHolidayPay,
+        holidayPercentage: data.holidayPercentage,
       },
     })
 
@@ -71,24 +89,26 @@ function WageForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
         <label className="block">
           <span className="text-gray-700 font-medium text-sm mb-2 block">Enter your wage:</span>
           <input
-            value={wageStr}
-            onChange={e => setWageStr(e.target.value)}
-            type="text"
+            {...register("wage", {
+              required: "Wage is required",
+              valueAsNumber: true,
+            })}
+            type="number"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="0"
           />
+          {errors.wage && <p className="text-red-500 text-sm mt-1">{errors.wage.message}</p>}
         </label>
 
         <label className="block">
           <span className="text-gray-700 font-medium text-sm mb-2 block">Wage per:</span>
           <select
-            value={wageFrequency}
-            onChange={e => setWageFrequency(e.target.value)}
+            {...register("wageFrequency")}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
           >
             <option value="yearly">Yearly</option>
@@ -102,36 +122,41 @@ function WageForm() {
             <label className="">I work:</label>
 
             <input
-              value={hoursPerPeriod}
-              onChange={e => setHoursPerPeriod(parseInt(e.target.value))}
+              {...register("hoursPerPeriod", {
+                required: "Hours per period is required",
+                min: { value: 1, message: "Must be at least 1 hour" },
+                valueAsNumber: true,
+              })}
               type="number"
               className="w-16 px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="0"
             />
             <label className="">hours per:</label>
             <select
-              value={periodsPerYear}
-              onChange={e => setPeriodsPerYear(parseInt(e.target.value))}
+              {...register("periodsPerYear", { valueAsNumber: true })}
               className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
-              <option value="52">Week</option>
-              <option value="12">Month</option>
-              <option value="13">4 Weeks</option>
+              <option value={52}>Week</option>
+              <option value={12}>Month</option>
+              <option value={13}>4 Weeks</option>
             </select>
           </div>
         )}
         <label className="flex flex-row items-center gap-2">
-          <input type="checkbox" checked={hasHolidayPay} onChange={e => setHasHolidayPay(e.target.checked)} />
+          <input type="checkbox" {...register("hasHolidayPay")} />
           <span>Extra holiday pay?</span>
         </label>
         {hasHolidayPay && (
           <label className="flex flex-row items-center gap-2">
             <span>Holiday pay percentage:</span>
             <input
+              {...register("holidayPercentage", {
+                min: { value: 0, message: "Percentage must be 0 or higher" },
+                max: { value: 100, message: "Percentage cannot exceed 100%" },
+                valueAsNumber: true,
+              })}
               className="w-16 px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               type="number"
-              value={holidayPercentage}
-              onChange={e => setHolidayPercentage(parseInt(e.target.value))}
             />
             <span>%</span>
           </label>
