@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react"
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom"
+import { Routes, Route, useNavigate, useLocation, Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { useIncomePercentile } from "./cbs-income-distribution"
 import { plausible } from "./plausible"
@@ -22,10 +22,40 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <main className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         <Routes>
-          <Route path="/" element={<WageForm />} />
+          <Route path="/" element={<Intro />} />
+          <Route path="/calculate" element={<WageForm />} />
           <Route path="/results" element={<Results />} />
         </Routes>
       </main>
+    </div>
+  )
+}
+
+function Intro() {
+  return (
+    <div className="text-center space-y-6">
+      <div className="space-y-4">
+        <h1 className="text-3xl font-bold text-gray-900">What's Your Time Worth?</h1>
+
+        <p className="text-gray-600 leading-relaxed">
+          Ever wondered how much you earn for every minute you're alive? This calculator converts your salary into
+          money-per-minute-alive and shows where you stand among Dutch single-person households.
+        </p>
+
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Fun fact:</strong> Whether you're working, sleeping, or just breathing, you're earning money for
+            every minute of your existence.
+          </p>
+        </div>
+      </div>
+
+      <Link
+        to="/calculate"
+        className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+      >
+        Calculate Your Money Per Minute
+      </Link>
     </div>
   )
 }
