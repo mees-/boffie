@@ -1,8 +1,7 @@
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { Routes, Route, useNavigate, useLocation, Link } from "react-router-dom"
 import { useForm } from "react-hook-form"
 import { useIncomePercentile } from "./cbs-income-distribution"
-import { plausible } from "./plausible"
 
 interface WageFormData {
   wage: number
@@ -14,12 +13,8 @@ interface WageFormData {
 }
 
 function App() {
-  useEffect(() => {
-    plausible.enableAutoPageviews()
-  }, [])
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <main className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
         <Routes>
           <Route path="/" element={<Intro />} />
@@ -96,18 +91,7 @@ function WageForm() {
     throw new Error("Invalid wage frequency")
   }, [wage, wageFrequency, hoursPerPeriod, periodsPerYear, holidayPercentage, hasHolidayPay])
 
-  const onSubmit = (data: WageFormData) => {
-    plausible.trackEvent("calculate", {
-      props: {
-        yearlyWage,
-        wageFrequency: data.wageFrequency,
-        hoursPerPeriod: data.hoursPerPeriod,
-        periodsPerYear: data.periodsPerYear,
-        hasHolidayPay: data.hasHolidayPay,
-        holidayPercentage: data.holidayPercentage,
-      },
-    })
-
+  const onSubmit = () => {
     const resultUrl = new URLSearchParams({
       yearlyWage: yearlyWage.toString(),
     })
